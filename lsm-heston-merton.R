@@ -2,15 +2,20 @@
 library(matrixStats)
 
 # Option parameters
-vol <- 0.2 # volatility (sigma)
 S_0 <- 100 # initial stock price
 r <- 0.06 # risk-free rate
 K <- 110 # strike price
 T <- 1 # time to maturity (years)
 
+# Heston model parameters
+rho <- -0.7 # correlation between asset and variance Brownian motions
+kappa <- 2 # mean-reversion rate
+theta <- 0.2 # mean variance
+xi <- 0.4 # volatility of volatility
+v_0 <- 0.11 # initial variance
+
 # Merton model parameters
 lambda <- 1.5 # jump intensity
-# mu_j <- -0.1 # mean of log jump size
 mu_j <- 0 # mean of log jump size
 sigma_j <- 0.1 # volatility of log jump size
 
@@ -24,18 +29,26 @@ dt <- T / N # time increment
 k_bar <- exp(mu_j + sigma_j^2 / 2) - 1 # expected jump compensation
 
 # Path simulations
-Z <- matrix(rnorm(N * R), nrow = R, ncol = N) # matrix of standard normal RVs
-dW <- Z * sqrt(dt) # Brownian increments
+Z_1 <- matrix(rnorm(N * R), nrow = R, ncol = N) # matrix of standard normal RVs
+Z_2 <- matrix(rnorm(N * R), nrow = R, ncol = N)
+dW_1 <- Z_1 * sqrt(dt) # Brownian increments
+dW_2 <- Z_2 * sqrt(dt)
+dW_S <- dW_1
+dW_V <- rho * dW_1 + sqrt(1 - rho^2) * dW_2
+
+V <- matrix(v_0, ncol = (N + 1), nrow = R)
+S <- matrix(S_0, ncol = (N + 1), nrow = R)
 
 # Jump simulations
 dq <- matrix(ifelse(rpois(N * R, lambda * dt) > 0, 1, 0), nrow = R, ncol = N, byrow = TRUE) # Poisson occurances dq_t
 k <- matrix(exp(rnorm(N * R, mu_j, sigma_j)) - 1, nrow = R, ncol = N, byrow = TRUE) # random normal jump sizes
 
-S <- matrix(S_0, ncol = (N + 1), nrow = R)
-
 for (n in 1 : N){
+  V_n <- V[, n]
+  V[, n + 1] <- pmax(V_n + kappa * (theta - V_n) * dt + xi * sqrt(V_n) * dW_V[, n], 0)
+  
   S_n <- S[, n]
-  S[, n + 1] <- S_n + (r - vol^2 / 2 - lambda * k_bar) * S_n * dt + vol * S_n * dW[, n] + S_n * k[, n] * dq[, n] # validate drift term
+  S[, n + 1] <- S_n + (r - V_n / 2 -  lambda * k_bar) * S_n * dt + sqrt(V_n) * S_n * dW[, n] + S_n * k[, n] * dq[, n]
   # S[, n + 1] <- S_n * exp((r - V_n / 2) * dt + sqrt(V_n) * dW_S[, n]) # alternative discretization
 }
 
