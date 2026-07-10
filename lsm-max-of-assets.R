@@ -18,18 +18,29 @@ T <- 3 # time to maturity (years)
 
 N <- 252 # number of time steps
 R <- 10000 # number of replications / asset
-J <- 5 # number of assets
+J <- 2 # number of assets
+
+# cor_matrix <- matrix(
+#   c(1, 0.5, 0, 0, 0,
+#     0.5, 1, 0, -0.5, 0,
+#     0, 0, 1, 0, 0,
+#     0, -0.5, 0, 1, 0,
+#     0, 0, 0, 0, 1),
+#   nrow = J, ncol = J, byrow = TRUE
+# )
 
 cor_matrix <- matrix(
-  c(1, 0, 0, 0, 0,
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0,
-    0, 0, 0, 0, 1),
+  c(1, 1,
+    1, 1),
   nrow = J, ncol = J, byrow = TRUE
 )
 
-# svd(cor_matrix)
+if (all(eigen(cor_matrix)$values > 0)){ #testing for positive definiteness
+  L <- t(cholesky(cor_matrix)) # Cholesky decomposition if matrix is positive definite
+} else {
+  decomp_cor_matrix <- svd(cor_matrix) # singular value decomposition otherwise
+  L <- decomp_cor_matrix$u %*% diag(sqrt(decomp_cor_matrix$d)) %*% t(decomp_cor_matrix$v)
+}
 
 start_time <- Sys.time()
 
@@ -37,11 +48,15 @@ start_time <- Sys.time()
 dt <- T / N # time increment
 
 # Path simulations
-Z <- matrix(rnorm(N * R * J), nrow = R * J, ncol = N) # matrix of standard normal RVs
-dW <- Z * sqrt(dt) # Brownian increments
+Z_indep <- matrix(rnorm(N * R * J), nrow = R * J, ncol = N) # matrix of standard normal RVs
+Z_corr <- matrix(nrow = R * J, ncol = N) # defining placeholder matrix
+for (i in 0 : (R - 1)){ # applying the decomposed correlation matrix
+  Z_corr[(1 + i * J) : (J * (i + 1)), ] <- L %*% Z_indep[(1 + i * J) : (J * (i + 1)), ]
+}
+dW <- Z_corr * sqrt(dt) # correlated Brownian increments
 W <- rowCumsums(dW) # Brownian motion at each time
-deterministic_matrix <- matrix((r - d - vol^2 / 2) * seq(dt, T, dt), nrow = R * J, ncol = N, byrow = TRUE) # deterministic component of GMB
-X <- S_0 * exp(deterministic_matrix) * exp(vol * W) # simulated GBMs
+drift_matrix <- matrix((r - d - vol^2 / 2) * seq(dt, T, dt), nrow = R * J, ncol = N, byrow = TRUE) # deterministic component of GMB
+X <- S_0 * exp(drift_matrix) * exp(vol * W) # simulated GBMs
 
 path_maxes <- matrix(0, nrow = R, ncol = N)
 
@@ -113,7 +128,7 @@ end_time <- Sys.time()
 perf_time <- end_time - start_time
 perf_time
 
-lsm <- X[, N]
+# lsm <- X[, N]
 
 plot(density(X[, N]))
 
