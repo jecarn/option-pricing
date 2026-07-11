@@ -40,7 +40,7 @@ V <- matrix(v_0, ncol = (N + 1), nrow = R)
 S <- matrix(S_0, ncol = (N + 1), nrow = R)
 
 # Jump simulations
-dq <- matrix(ifelse(rpois(N * R, lambda * dt) > 0, 1, 0), nrow = R, ncol = N, byrow = TRUE) # Poisson occurances dq_t
+dq <- matrix(ifelse(rpois(N * R, lambda * dt) > 0, 1, 0), nrow = R, ncol = N, byrow = TRUE) # Poisson occurrences dq_t
 k <- matrix(exp(rnorm(N * R, mu_j, sigma_j)) - 1, nrow = R, ncol = N, byrow = TRUE) # random normal jump sizes
 
 for (n in 1 : N){
@@ -48,7 +48,7 @@ for (n in 1 : N){
   V[, n + 1] <- pmax(V_n + kappa * (theta - V_n) * dt + xi * sqrt(V_n) * dW_V[, n], 0)
   
   S_n <- S[, n]
-  S[, n + 1] <- S_n + (r - V_n / 2 -  lambda * k_bar) * S_n * dt + sqrt(V_n) * S_n * dW[, n] + S_n * k[, n] * dq[, n]
+  S[, n + 1] <- S_n + (r - lambda * k_bar) * S_n * dt + sqrt(V_n) * S_n * dW[, n] + S_n * k[, n] * dq[, n]
   # S[, n + 1] <- S_n * exp((r - V_n / 2) * dt + sqrt(V_n) * dW_S[, n]) # alternative discretization
 }
 

@@ -28,14 +28,14 @@ Z <- matrix(rnorm(N * R), nrow = R, ncol = N) # matrix of standard normal RVs
 dW <- Z * sqrt(dt) # Brownian increments
 
 # Jump simulations
-dq <- matrix(ifelse(rpois(N * R, lambda * dt) > 0, 1, 0), nrow = R, ncol = N, byrow = TRUE) # Poisson occurances dq_t
+dq <- matrix(ifelse(rpois(N * R, lambda * dt) > 0, 1, 0), nrow = R, ncol = N, byrow = TRUE) # Poisson occurrences dq_t
 k <- matrix(exp(rnorm(N * R, mu_j, sigma_j)) - 1, nrow = R, ncol = N, byrow = TRUE) # random normal jump sizes
 
 S <- matrix(S_0, ncol = (N + 1), nrow = R)
 
 for (n in 1 : N){
   S_n <- S[, n]
-  S[, n + 1] <- S_n + (r - vol^2 / 2 - lambda * k_bar) * S_n * dt + vol * S_n * dW[, n] + S_n * k[, n] * dq[, n] # validate drift term
+  S[, n + 1] <- S_n + (r - lambda * k_bar) * S_n * dt + vol * S_n * dW[, n] + S_n * k[, n] * dq[, n] # validate drift term
   # S[, n + 1] <- S_n * exp((r - V_n / 2) * dt + sqrt(V_n) * dW_S[, n]) # alternative discretization
 }
 

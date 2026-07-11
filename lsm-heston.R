@@ -11,11 +11,11 @@ T <- 1 # time to maturity (years)
 rho <- -0.7 # correlation between asset and variance Brownian motions
 kappa <- 2 # mean-reversion rate
 theta <- 0.1 # mean variance
-xi <- 0.4 # volatility of volatility
 v_0 <- 0.11 # initial variance
+xi <- 0.4 # volatility of volatility
 
-N <- 252 # number of time steps
-R <- 50000 # number of replications
+N <- 365 # number of time steps
+R <- 200000 # number of replications
 
 start_time <- Sys.time()
 
@@ -93,6 +93,6 @@ perf_time
 exp(-r * T) * mean(payoff(X[, N], K)) # European put option price
 exp(-r * T) * mean(pmax(X[, N] - K, 0)) # European call option price
 
-lsm_heston <- X[, N]
+# lsm_heston <- X[, N]
 
 plot(density(X[, N]))
